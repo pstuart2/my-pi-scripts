@@ -18,12 +18,54 @@ class ScriptItem:
         self.on = on
 
 
+basic_sequence_time = 0.5
+drum_time = 0.2
+rock_you_pause_1 = 0.2
+rock_you_pause_2 = 0.8
+
+turn_on = ScriptItem(0.0, [], [0, 1, 2])
 turn_off = ScriptItem(0.0, [0, 1, 2], [])
 
 one_second_sequence = [
-    ScriptItem(1.0, [2], [0]),
-    ScriptItem(1.0, [0], [1]),
-    ScriptItem(1.0, [1], [2]),
+    ScriptItem(basic_sequence_time, [2], [0]),
+    ScriptItem(basic_sequence_time, [0], [1]),
+    ScriptItem(basic_sequence_time, [1], [2]),
+]
+
+rock_you = [
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [2]),
+    ScriptItem(rock_you_pause_2, [2], []),
+]
+
+on_off_fifo = [
+    ScriptItem(basic_sequence_time, [], [0]),
+    ScriptItem(basic_sequence_time, [], [1]),
+    ScriptItem(basic_sequence_time, [], [2]),
+    ScriptItem(basic_sequence_time, [0], []),
+    ScriptItem(basic_sequence_time, [1], []),
+    ScriptItem(basic_sequence_time, [2], []),
+]
+
+on_off_lifo = [
+    ScriptItem(basic_sequence_time, [], [0]),
+    ScriptItem(basic_sequence_time, [], [1]),
+    ScriptItem(basic_sequence_time, [], [2]),
+    ScriptItem(basic_sequence_time, [2], []),
+    ScriptItem(basic_sequence_time, [1], []),
+    ScriptItem(basic_sequence_time, [0], []),
+]
+
+on_off_lifo_rev = [
+    ScriptItem(basic_sequence_time, [], [2]),
+    ScriptItem(basic_sequence_time, [], [1]),
+    ScriptItem(basic_sequence_time, [], [0]),
+    ScriptItem(basic_sequence_time, [0], []),
+    ScriptItem(basic_sequence_time, [1], []),
+    ScriptItem(basic_sequence_time, [2], []),
 ]
 
 
@@ -49,7 +91,7 @@ def lights():
 
 
 def loop():
-    run_sequence(5, one_second_sequence)
+    run_sequence(5, on_off_lifo_rev)
 
 
 # run(app, host='localhost', port=8080)
