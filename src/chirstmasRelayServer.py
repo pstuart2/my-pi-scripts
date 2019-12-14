@@ -26,10 +26,16 @@ rock_you_pause_2 = 0.8
 turn_on = ScriptItem(0.0, [], [0, 1, 2])
 turn_off = ScriptItem(0.0, [0, 1, 2], [])
 
-one_second_sequence = [
+single_on_sequence = [
     ScriptItem(basic_sequence_time, [2], [0]),
     ScriptItem(basic_sequence_time, [0], [1]),
     ScriptItem(basic_sequence_time, [1], [2]),
+]
+
+single_off_sequence = [
+    ScriptItem(basic_sequence_time, [0], [1, 2]),
+    ScriptItem(basic_sequence_time, [1], [0, 2]),
+    ScriptItem(basic_sequence_time, [2], [0, 1]),
 ]
 
 rock_you = [
@@ -68,30 +74,35 @@ on_off_lifo_rev = [
     ScriptItem(basic_sequence_time, [2], []),
 ]
 
+sequences = [
+    single_on_sequence,
+    single_off_sequence,
+    on_off_fifo,
+    on_off_lifo,
+    on_off_lifo_rev,
+    rock_you,
+]
+
 
 def setup():
     GPIO.setmode(GPIO.BCM)
 
     for pin in pins:
         GPIO.setup(pin, GPIO.OUT)
-        GPIO.output(pin, True)
+        pin_off(pin)
 
 
-@post('/lights')
-def lights():
-    data = request.json
+def pin_off(pin):
+    GPIO.output(pin, True)
 
-    for i in range(len(data)):
-        if data[i] == 0:
-            GPIO.output(pins[i], True)
-        else:
-            GPIO.output(pins[i], False)
 
-    return ""
+def pin_on(pin):
+    GPIO.output(pin, False)
 
 
 def loop():
-    run_sequence(5, on_off_lifo_rev)
+    for sequence in sequences:
+        run_sequence(5, sequence)
 
 
 # run(app, host='localhost', port=8080)
@@ -112,10 +123,10 @@ def run_item(t):
     print('Sequence...{} {} {}'.format(t.time_until, t.off, t.on))
 
     for i in t.off:
-        GPIO.output(pins[i], True)
+        pin_off(pins[i])
 
     for i in t.on:
-        GPIO.output(pins[i], False)
+        pin_on(pins[i])
 
     time.sleep(t.time_until)
 
