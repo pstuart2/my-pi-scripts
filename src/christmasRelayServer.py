@@ -1,10 +1,10 @@
 import RPi.GPIO as GPIO
+import os
 import time
-from bottle import Bottle, run, post, request
+import datetime
+import logging
 
 pins = [2, 3, 4, 17, 27, 22, 10, 9]
-
-app = Bottle()
 
 
 class ScriptItem:
@@ -18,7 +18,7 @@ class ScriptItem:
         self.on = on
 
 
-basic_sequence_time = 0.5
+basic_sequence_time = 2
 drum_time = 0.2
 rock_you_pause_1 = 0.2
 rock_you_pause_2 = 0.8
@@ -39,6 +39,24 @@ single_off_sequence = [
 ]
 
 rock_you = [
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [2]),
+    ScriptItem(rock_you_pause_2, [2], []),
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [2]),
+    ScriptItem(rock_you_pause_2, [2], []),
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [0, 1]),
+    ScriptItem(rock_you_pause_1, [0, 1], []),
+    ScriptItem(drum_time, [], [2]),
+    ScriptItem(rock_you_pause_2, [2], []),
     ScriptItem(drum_time, [], [0, 1]),
     ScriptItem(rock_you_pause_1, [0, 1], []),
     ScriptItem(drum_time, [], [0, 1]),
@@ -85,6 +103,15 @@ sequences = [
 
 
 def setup():
+    ts = datetime.datetime.now()
+
+    epoc = time.time()
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    logging.basicConfig(filename=file_dir + '/christmasRelayServer.' + str(epoc) + '.log', level=logging.INFO,
+                        format='%(asctime)s|%(levelname)s|%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+
+    logging.info('Run Start: {}'.format(ts))
+
     GPIO.setmode(GPIO.BCM)
 
     for pin in pins:
@@ -101,26 +128,56 @@ def pin_on(pin):
 
 
 def loop():
-    for sequence in sequences:
-        run_sequence(5, sequence)
+    while True:
+        for sequence in sequences:
+            if is_time_to_stop():
+                break
+
+            run_sequence(20, sequence)
+
+            minutes = 5
+            while minutes > 0:
+                if is_time_to_stop():
+                    break
+
+                run_item(turn_on)
+                minutes = minutes - 1
+
+            if is_time_to_stop():
+                break
 
 
-# run(app, host='localhost', port=8080)
+def is_time_to_stop():
+    timestamp = get_time()
+
+    if timestamp.hour >= 22 and timestamp.minute >= 0:
+        return True
+
+    return False
+
+
 def run_sequence(times, sequence):
     run_item(turn_off)
 
     count = times
 
     while count > 0:
-        print('run_sequence(): count: {}'.format(count))
+        logging.info('run_sequence(): count: {}'.format(count))
         count = count - 1
 
         for t in sequence:
             run_item(t)
 
 
+def get_time():
+    timestamp = datetime.datetime.now().time()
+    logging.info('Time: {}'.format(timestamp))
+
+    return timestamp
+
+
 def run_item(t):
-    print('Sequence...{} {} {}'.format(t.time_until, t.off, t.on))
+    logging.debug('Sequence...{} {} {}'.format(t.time_until, t.off, t.on))
 
     for i in t.off:
         pin_off(pins[i])
@@ -132,12 +189,13 @@ def run_item(t):
 
 
 def destroy():
-    print("> Clean up")
+    logging.info("> Clean up")
     GPIO.cleanup()  # Release resource
 
 
 if __name__ == '__main__':  # Program start from here
     setup()
+
     try:
         loop()
     except KeyboardInterrupt:

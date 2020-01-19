@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always">
+  <component name="PublishConfigData" autoUpload="Always" serverName="(PI 3) 192.168.86.102">
     <serverData>
+      <paths name="(PI 3) 192.168.86.102">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/pi/scripts" local="$PROJECT_DIR$/src" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="pi@192.168.86.103:22">
         <serverdata>
           <mappings>
