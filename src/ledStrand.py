@@ -13,6 +13,10 @@ bottom_bar = []
 
 _rows = []
 
+max_intensity: int = 128
+build_up: int = 4
+step: int = math.floor(max_intensity / build_up)
+
 # LED strip configuration:
 LED_COUNT = TOP_BAR_PIXEL_COUNT + VERTICAL_BAR_PIXEL_COUNT + BOTTOM_BAR_PIXEL_COUNT
 LED_PIN = 18  # GPIO pin connected to the pixels (18 uses PWM!).
@@ -46,29 +50,42 @@ def setup(rows):
 
     rows.append(bottom_bar)
 
-    print(rows)
+
+def move_floor_down(strip, rows, throttle=0):
+    global max_intensity, build_up, step
+
+    row_count: int = len(rows)
+    end: int = 0 - build_up - 1
+    start: int = row_count + build_up - 1
+
+    for current_full_row in range(start, end, -1):
+        render_frame(strip, rows, row_count, current_full_row, throttle)
 
 
-def move_floor(strip, rows, throttle=0):
-    max_intensity: int = 256
-    build_up: int = 4
-    step: int = math.floor(max_intensity / build_up)
+def move_floor_up(strip, rows, throttle=0):
+    global max_intensity, build_up, step
 
     row_count: int = len(rows)
     start: int = 0 - build_up
     end: int = row_count + build_up
 
     for current_full_row in range(start, end):
-        for diff in range(-build_up, build_up + 1):
-            current_row: int = current_full_row + diff
-            if 0 <= current_row < row_count:
-                intensity: int = min((max_intensity - abs(step * diff)), 255)
+        render_frame(strip, rows, row_count, current_full_row, throttle)
 
-                for pixel in rows[current_row]:
-                    strip.setPixelColor(pixel, Color(intensity, intensity, intensity))
 
-        strip.show()
-        time.sleep(throttle / 1000)
+def render_frame(strip, rows, row_count, current_full_row, throttle):
+    global max_intensity, build_up, step
+
+    for diff in range(-build_up, build_up + 1):
+        current_row: int = current_full_row + diff
+        if 0 <= current_row < row_count:
+            intensity: int = min((max_intensity - abs(step * diff)), 255)
+
+            for pixel in rows[current_row]:
+                strip.setPixelColor(pixel, Color(intensity, intensity, intensity))
+
+    strip.show()
+    time.sleep(throttle / 1000)
 
 
 # Define functions which animate LEDs in various ways.
@@ -102,11 +119,19 @@ if __name__ == '__main__':
         # while True:
 
         # bar_glow(_strip, top_bar, 10)
-        move_floor(_strip, _rows, 0)
-        move_floor(_strip, _rows, 1)
-        move_floor(_strip, _rows, 5)
-        move_floor(_strip, _rows, 10)
-        move_floor(_strip, _rows, 20)
+        move_floor_up(_strip, _rows, 0)
+        move_floor_up(_strip, _rows, 1)
+        move_floor_up(_strip, _rows, 5)
+        move_floor_up(_strip, _rows, 10)
+        move_floor_up(_strip, _rows, 20)
+
+        time.sleep(1)
+
+        move_floor_down(_strip, _rows, 0)
+        move_floor_down(_strip, _rows, 1)
+        move_floor_down(_strip, _rows, 5)
+        move_floor_down(_strip, _rows, 10)
+        move_floor_down(_strip, _rows, 20)
 
     except KeyboardInterrupt:
         pass
