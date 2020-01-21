@@ -2,6 +2,7 @@
 import math
 import time
 from rpi_ws281x import *
+from bottle import route, run, template
 
 TOP_BAR_PIXEL_COUNT = 30
 VERTICAL_BAR_PIXEL_COUNT = 57
@@ -16,6 +17,7 @@ _rows = []
 max_intensity: int = 128
 build_up: int = 4
 step: int = math.floor(max_intensity / build_up)
+speeds = [40, 20, 10, 5]
 
 # LED strip configuration:
 LED_COUNT = TOP_BAR_PIXEL_COUNT + VERTICAL_BAR_PIXEL_COUNT + BOTTOM_BAR_PIXEL_COUNT
@@ -26,6 +28,9 @@ LED_DMA = 10  # DMA channel to use for generating signal (try 10)
 LED_BRIGHTNESS = 255  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False  # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+
+# Create NeoPixel object with appropriate configuration.
+_strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, WS2812_STRIP)
 
 
 def setup(rows):
@@ -89,7 +94,7 @@ def render_frame(strip, rows, row_count, current_full_row, throttle):
 
 
 def move_floor(strip, rows, floors, dir_func):
-    speeds = [40, 20, 10, 5]
+    global speeds
 
     if floors == 1:
         dir_func(strip, rows, speeds[0])
@@ -138,10 +143,22 @@ def destroy(strip):
         strip.show()
 
 
+@route('/up/<floors:int>')
+def up(floors):
+    print('Moving up floors: ' + str(floors))
+    move_floor(_strip, _rows, floors, floor_up)
+    return "ok"
+
+
+@route('/down/<floors:int>')
+def down(floors):
+    print('Moving down floors: ' + str(floors))
+    move_floor(_strip, _rows, floors, floor_down)
+    return "ok"
+
+
 # Main program logic follows:
 if __name__ == '__main__':
-    # Create NeoPixel object with appropriate configuration.
-    _strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, WS2812_STRIP)
     # Initialize the library (must be called once before other functions).
     _strip.begin()
 
@@ -150,12 +167,7 @@ if __name__ == '__main__':
     try:
         setup(_rows)
 
-        move_floor(_strip, _rows, 3, floor_up)
-        time.sleep(2)
-        move_floor(_strip, _rows, 8, floor_up)
-        time.sleep(2)
-        move_floor(_strip, _rows, 11, floor_down)
-
+        run(host='192.168.86.102', port=8080)
 
     except KeyboardInterrupt:
         pass
