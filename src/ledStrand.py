@@ -51,7 +51,7 @@ def setup(rows):
     rows.append(bottom_bar)
 
 
-def move_floor_down(strip, rows, throttle=0):
+def floor_down(strip, rows, throttle=0):
     global max_intensity, build_up, step
 
     row_count: int = len(rows)
@@ -62,7 +62,7 @@ def move_floor_down(strip, rows, throttle=0):
         render_frame(strip, rows, row_count, current_full_row, throttle)
 
 
-def move_floor_up(strip, rows, throttle=0):
+def floor_up(strip, rows, throttle=0):
     global max_intensity, build_up, step
 
     row_count: int = len(rows)
@@ -86,6 +86,40 @@ def render_frame(strip, rows, row_count, current_full_row, throttle):
 
     strip.show()
     time.sleep(throttle / 1000)
+
+
+def move_floor(strip, rows, floors, dir_func):
+    speeds = [40, 20, 10, 5]
+
+    if floors == 1:
+        dir_func(strip, rows, speeds[0])
+        return
+
+    full_speed_floors: int = floors - (len(speeds) * 2)
+
+    if full_speed_floors >= 0:
+        for i in range(0, len(speeds)):
+            dir_func(strip, rows, speeds[i])
+
+        for i in range(0, full_speed_floors):
+            dir_func(strip, rows, 0)
+
+        for i in range(len(speeds) - 1, -1, -1):
+            dir_func(strip, rows, speeds[i])
+    else:
+        half_floors: int = math.floor(floors / 2)
+        odd_floors: bool = floors % 2 > 0
+        speed: int = 0
+
+        for i in range(0, half_floors):
+            speed = i
+            dir_func(strip, rows, speeds[i])
+
+        if odd_floors:
+            dir_func(strip, rows, speeds[speed])
+
+        for i in range(speed, -1, -1):
+            dir_func(strip, rows, speeds[i])
 
 
 # Define functions which animate LEDs in various ways.
@@ -116,22 +150,12 @@ if __name__ == '__main__':
     try:
         setup(_rows)
 
-        # while True:
+        move_floor(_strip, _rows, 3, floor_up)
+        time.sleep(2)
+        move_floor(_strip, _rows, 8, floor_up)
+        time.sleep(2)
+        move_floor(_strip, _rows, 11, floor_down)
 
-        # bar_glow(_strip, top_bar, 10)
-        move_floor_up(_strip, _rows, 0)
-        move_floor_up(_strip, _rows, 1)
-        move_floor_up(_strip, _rows, 5)
-        move_floor_up(_strip, _rows, 10)
-        move_floor_up(_strip, _rows, 20)
-
-        time.sleep(1)
-
-        move_floor_down(_strip, _rows, 0)
-        move_floor_down(_strip, _rows, 1)
-        move_floor_down(_strip, _rows, 5)
-        move_floor_down(_strip, _rows, 10)
-        move_floor_down(_strip, _rows, 20)
 
     except KeyboardInterrupt:
         pass
